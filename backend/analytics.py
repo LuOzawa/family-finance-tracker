@@ -70,7 +70,9 @@ def kmeans_cluster(records, n_clusters=3):
             'color': colors[i % len(colors)],
         })
 
-    out = df[['id', 'date', 'category', 'amount', 'note', 'cluster']].copy()
+    # id / note 是数据库层才有的字段，缺列时不应整条聚类崩掉
+    wanted = [c for c in ('id', 'date', 'category', 'amount', 'note', 'cluster') if c in df.columns]
+    out = df[wanted].copy()
     out['date'] = out['date'].dt.strftime('%Y-%m-%d')
     out['cluster'] = out['cluster'].astype(int)
 
