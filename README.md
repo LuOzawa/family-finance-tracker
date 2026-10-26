@@ -1,5 +1,9 @@
 # 家庭理财记账系统
 
+[![CI](https://github.com/LuOzawa/family-finance-tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/LuOzawa/family-finance-tracker/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
+
 面向个人与家庭的记账与财务分析系统。**Flask + Vue 3 前后端分离**，支持日常收支记录、
 月度预算管控，并内置 KMeans 消费聚类、ARIMA 支出预测与财务健康评分三组分析模型。
 
@@ -201,11 +205,18 @@ User ──┬── FinanceRecord     （1:N，级联删除）
 
 ```bash
 cd backend
-pytest test_api.py -q
+pytest test_api.py test_analytics.py -q     # 44 个用例
 ```
 
-29 个用例，覆盖登录/登出、记录 CRUD、分类与日期筛选、分析接口（含数据不足分支）、
-预算 upsert、健康评分。当前状态：**29 passed**。
+**两部分测试，职责不同：**
+
+| 文件 | 用例 | 依赖 | 覆盖 |
+|---|---|---|---|
+| `test_api.py` | 29 | SQLite 临时库 | 登录/登出、记录 CRUD、分类与日期筛选、分析接口（含数据不足分支）、预算 upsert、健康评分 |
+| `test_analytics.py` | 15 | **无依赖**（纯函数） | 空数据兜底、分类/月度聚合、非法金额与非法日期、KMeans 样本边界、ARIMA 三级降级、健康评分四维规则 |
+
+`test_analytics.py` 不碰数据库，因此 CI 里直接跑它；`test_api.py` 需要 SQLite fixture，
+留作本地全量回归。当前状态：**44 passed**。
 
 > ⚠️ `test_api.py` 会在 fixture 里执行 `db.drop_all()`。文件顶部已把 `DATABASE_URL`
 > 强制指向临时 SQLite 文件，并加了断言兜底，**不会**碰真实数据库。
