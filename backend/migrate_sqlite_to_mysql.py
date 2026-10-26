@@ -9,8 +9,20 @@ import sys
 # SQLite 数据库路径
 SQLITE_PATH = os.path.join(os.path.dirname(__file__), 'instance', 'family_finance.db')
 
-# MySQL 连接信息
-MYSQL_URI = 'mysql+pymysql://root:1234@localhost:3306/family_finance?charset=utf8mb4'
+# MySQL 连接信息：从环境变量读取，仓库中不保存口令
+import os
+from urllib.parse import quote_plus
+
+DB_HOST = os.environ.get('DB_HOST', 'localhost')
+DB_PORT = os.environ.get('DB_PORT', '3306')
+DB_USER = os.environ.get('DB_USER', 'root')
+DB_PASSWORD = os.environ.get('DB_PASSWORD', '')
+DB_NAME = os.environ.get('DB_NAME', 'family_finance')
+
+MYSQL_URI = (
+    f'mysql+pymysql://{quote_plus(DB_USER)}:{quote_plus(DB_PASSWORD)}'
+    f'@{DB_HOST}:{DB_PORT}/{DB_NAME}?charset=utf8mb4'
+)
 
 def migrate():
     # 检查 SQLite 文件是否存在
@@ -43,9 +55,13 @@ def migrate():
     # 先用 PyMySQL 直接创建数据库（如果不存在）
     print("\n正在创建 MySQL 数据库（如果不存在）...")
     import pymysql
-    conn_mysql = pymysql.connect(host='localhost', port=3306, user='root', password='1234', charset='utf8mb4')
+    conn_mysql = pymysql.connect(host=DB_HOST, port=int(DB_PORT), user=DB_USER,
+                                password=DB_PASSWORD, charset='utf8mb4')
     cur_mysql = conn_mysql.cursor()
-    cur_mysql.execute("CREATE DATABASE IF NOT EXISTS family_finance CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci")
+    cur_mysql.execute(
+        f"CREATE DATABASE IF NOT EXISTS `{DB_NAME}` "
+        "CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+    )
     conn_mysql.commit()
     conn_mysql.close()
     print("  数据库 family_finance 已就绪。")
